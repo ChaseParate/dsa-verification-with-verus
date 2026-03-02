@@ -1,5 +1,7 @@
 use vstd::prelude::*;
 
+mod sort;
+
 verus! {
 
 spec fn min(x: int, y: int) -> int {
