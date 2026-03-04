@@ -2,22 +2,22 @@ use vstd::prelude::*;
 
 verus! {
 
-use super::is_sorted;
+use super::is_valid_sorting_algorithm;
 
-pub fn selection_sort(v: &Vec<i32>) -> (s: Vec<i32>)
+pub fn selection_sort(input: Vec<i32>) -> (output: Vec<i32>)
     ensures
-        is_sorted(v),
+        is_valid_sorting_algorithm(input@, output@),
 {
-    let mut s = v.clone();
+    // TODO
+    let output = input;
+    assume(is_valid_sorting_algorithm(input@, output@));
 
-    assume(is_sorted(v));  // TODO
-
-    s
+    output
 }
 
 fn main() {
-    let v = vec![9, 10, 4, 5, 1, 3];
-    let v_sorted = selection_sort(&v);
+    let v = vec![2, 4, -5, 1, 3, 2];
+    let v_sorted = selection_sort(v);
 }
 
 } // verus!
