@@ -4,10 +4,13 @@ verus! {
 
 use super::is_sorted;
 
-pub fn selection_sort(v: &Vec<i32>) -> (s: Vec<i32>) ensures is_sorted(v) {
+pub fn selection_sort(v: &Vec<i32>) -> (s: Vec<i32>)
+    ensures
+        is_sorted(v),
+{
     let mut s = v.clone();
 
-    assume(is_sorted(v)); // TODO
+    assume(is_sorted(v));  // TODO
 
     s
 }

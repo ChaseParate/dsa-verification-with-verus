@@ -1,8 +1,15 @@
 VERUS := verus
+VERUSFMT := verusfmt
 
 SOURCE_DIRECTORY := ./src
 
-.PHONY: check
+ROOT_SOURCE_FILE := $(SOURCE_DIRECTORY)/main.rs
+ALL_SOURCE_FILES := $(shell find $(SOURCE_DIRECTORY) -name "*.rs")
+
+.PHONY: check format
 
 check:
-	$(VERUS) $(SOURCE_DIRECTORY)/main.rs
+	$(VERUS) $(ROOT_SOURCE_FILE)
+
+format:
+	$(VERUSFMT) $(ALL_SOURCE_FILES)
