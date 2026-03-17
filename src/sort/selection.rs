@@ -9,30 +9,38 @@ pub exec fn selection_sort(input: &mut Vec<i32>)
         is_valid_sorting_algorithm(old(input)@, input@),
 {
     if input.is_empty() {
-        return ;
+        return;
     }
-    for i in 0..(input.len() - 1)
+
+    let n = input.len();
+
+    for i in 0..(n - 1)
         invariant
-            0 <= i < input.len(),
+            n == input.len(),
+            0 <= i < n,
+            is_permutation(old(input)@, input@),
+            forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2], // The left partition is sorted
+            forall|k1: int, k2: int| 0 <= k1 < i && i <= k2 < n ==> input[k1] <= input[k2], // Everything in the sorted partition is less than everything in the unsorted partition
     {
-        assert(0 <= i < input.len());
+        let mut min_index = i;
 
-        let mut max_index = i;
-        assert(0 <= max_index < input.len());
-
-        for j in (i + 1)..input.len()
+        for j in (i + 1)..n
             invariant
-                i <= max_index < input.len(),
+                n == input.len(),
+                is_permutation(old(input)@, input@),
+                forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],
+                forall|k1: int, k2: int| 0 <= k1 < i && i <= k2 < n ==> input[k1] <= input[k2],
+                i <= min_index < n, // Bounds check for `min_index`
+                forall|k: int| i <= k < j ==> input[min_index as int] <= input[k], // The item at `min_index` is the smallest out of all currently seen items in the unsorted partition
         {
-            assert(0 <= j < input.len());
-            assert(0 <= max_index < input.len());
-
-            if input[j] > input[max_index] {
-                max_index = j;
+            if input[j] < input[min_index] {
+                min_index = j;
             }
         }
 
-        swap(input, i, max_index);
+        if min_index != i {
+            swap(input, i, min_index);
+        }
     }
 }
 
@@ -42,6 +50,8 @@ fn main() {
 
     selection_sort(&mut v);
     let ghost new_v = v@;
+
+    assert(is_valid_sorting_algorithm(old_v, new_v));
 }
 
 } // verus!
