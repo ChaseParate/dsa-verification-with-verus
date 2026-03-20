@@ -9,9 +9,8 @@ pub exec fn selection_sort(input: &mut Vec<i32>)
         is_valid_sorting_algorithm(old(input)@, input@),
 {
     if input.is_empty() {
-        return;
+        return ;
     }
-
     let n = input.len();
 
     for i in 0..(n - 1)
@@ -19,8 +18,8 @@ pub exec fn selection_sort(input: &mut Vec<i32>)
             n == input.len(),
             0 <= i < n,
             is_permutation(old(input)@, input@),
-            forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2], // The left partition is sorted
-            forall|k1: int, k2: int| 0 <= k1 < i && i <= k2 < n ==> input[k1] <= input[k2], // Everything in the sorted partition is less than everything in the unsorted partition
+            forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],  // The left partition is sorted
+            forall|k1: int, k2: int| 0 <= k1 < i && i <= k2 < n ==> input[k1] <= input[k2],  // Everything in the sorted partition is less than everything in the unsorted partition
     {
         let mut min_index = i;
 
@@ -30,8 +29,8 @@ pub exec fn selection_sort(input: &mut Vec<i32>)
                 is_permutation(old(input)@, input@),
                 forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],
                 forall|k1: int, k2: int| 0 <= k1 < i && i <= k2 < n ==> input[k1] <= input[k2],
-                i <= min_index < n, // Bounds check for `min_index`
-                forall|k: int| i <= k < j ==> input[min_index as int] <= input[k], // The item at `min_index` is the smallest out of all currently seen items in the unsorted partition
+                i <= min_index < n,  // Bounds check for `min_index`
+                forall|k: int| i <= k < j ==> input[min_index as int] <= input[k],  // The item at `min_index` is the smallest out of all currently seen items in the unsorted partition
         {
             if input[j] < input[min_index] {
                 min_index = j;
