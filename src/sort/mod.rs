@@ -1,5 +1,6 @@
 use vstd::prelude::*;
 
+mod insertion;
 mod selection;
 
 verus! {
