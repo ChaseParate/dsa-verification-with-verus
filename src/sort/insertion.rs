@@ -40,4 +40,14 @@ pub exec fn insertion_sort(input: &mut Vec<i32>)
     }
 }
 
+fn main() {
+    let mut v = vec![2, 4, -5, 1, 3, 2];
+    let ghost old_v = v@;
+
+    insertion_sort(&mut v);
+    let ghost new_v = v@;
+
+    assert(is_valid_sorting_algorithm(old_v, new_v));
+}
+
 } // verus!
