@@ -11,25 +11,21 @@ pub exec fn selection_sort(input: &mut Vec<i32>)
     if input.is_empty() {
         return ;
     }
-    let n = input.len();
-
-    for i in 0..(n - 1)
+    for i in iter: 0..(input.len() - 1)
         invariant
-            n == input.len(),
-            0 <= i < n,
+            iter.end == old(input).len() - 1,
+            input.len() == old(input).len(),
             is_permutation(old(input)@, input@),
-            forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],  // The left partition is sorted
-            forall|k1: int, k2: int| 0 <= k1 < i && i <= k2 < n ==> input[k1] <= input[k2],  // Everything in the sorted partition is less than everything in the unsorted partition
+            forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],  // The sorted partition is indeed sorted
+            forall|k1: int, k2: int|
+                0 <= k1 < i && i <= k2 < input.len() ==> input[k1] <= input[k2],  // Everything in the sorted partition is less than everything in the unsorted partition
     {
         let mut min_index = i;
 
-        for j in (i + 1)..n
+        for j in iter: (i + 1)..input.len()
             invariant
-                n == input.len(),
-                is_permutation(old(input)@, input@),
-                forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],
-                forall|k1: int, k2: int| 0 <= k1 < i && i <= k2 < n ==> input[k1] <= input[k2],
-                i <= min_index < n,  // Bounds check for `min_index`
+                iter.end == old(input).len(),
+                i <= min_index < input.len(),  // Bounds check for `min_index`
                 forall|k: int| i <= k < j ==> input[min_index as int] <= input[k],  // The item at `min_index` is the smallest out of all currently seen items in the unsorted partition
         {
             if input[j] < input[min_index] {
