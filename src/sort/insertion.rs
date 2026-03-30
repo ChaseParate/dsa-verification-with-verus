@@ -11,32 +11,28 @@ pub exec fn insertion_sort(input: &mut Vec<i32>)
     if input.is_empty() {
         return ;
     }
-    let mut x = 1;
-    while x < input.len()
+    for i in iter: 1..input.len()
         invariant
-            1 <= x <= input.len(),
+            iter.end == old(input).len(),
             input.len() == old(input).len(),
-            forall|i: int, j: int| 0 <= i < j < x ==> input[i] <= input[j],
+            forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],  // Everything in the sorted partition is indeed sorted.
             is_permutation(old(input)@, input@),
-        decreases input.len() - x,
     {
-        let mut d = x;
+        let mut d = i;
 
         while d >= 1 && input[d - 1] > input[d]
             invariant
-                0 <= d <= x < input.len(),
+                0 <= d <= i < input.len(),
                 input.len() == old(input).len(),
-                forall|i: int, j: int| 0 <= i < j < d ==> input[i] <= input[j],
-                forall|i: int, j: int| d <= i < j <= x ==> input[i] <= input[j],
-                forall|i: int, j: int| 0 <= i < d && d < j <= x ==> input[i] <= input[j],
+                forall|k1: int, k2: int| 0 <= k1 < k2 < d ==> input[k1] <= input[k2],  // Everything in the sorted partition before the "swapping point" is sorted.
+                forall|k1: int, k2: int| d <= k1 < k2 <= i ==> input[k1] <= input[k2],  // Everything in the sorted partition after the "swapping point" is sorted.
+                forall|k1: int, k2: int| 0 <= k1 < d && d < k2 <= i ==> input[k1] <= input[k2],  // Everything before the "swapping point" in the sorted partition is less than everything after the "swapping point" in the sorted partition.
                 is_permutation(old(input)@, input@),
             decreases d,
         {
             swap(input, d, d - 1);
             d -= 1;
         }
-
-        x += 1;
     }
 }
 
