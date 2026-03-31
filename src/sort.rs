@@ -1,5 +1,6 @@
 use vstd::prelude::*;
 
+mod bubble;
 mod insertion;
 mod selection;
 
