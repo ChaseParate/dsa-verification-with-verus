@@ -13,7 +13,7 @@ pub exec fn insertion_sort(input: &mut Vec<i32>)
     }
     for i in iter: 1..input.len()
         invariant
-            iter.end == old(input).len(),
+            iter.end == input.len(),
             input.len() == old(input).len(),
             forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],  // Everything in the sorted partition is indeed sorted.
             is_permutation(old(input)@, input@),

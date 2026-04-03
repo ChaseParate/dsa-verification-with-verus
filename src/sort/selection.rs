@@ -13,7 +13,7 @@ pub exec fn selection_sort(input: &mut Vec<i32>)
     }
     for i in iter: 0..(input.len() - 1)
         invariant
-            iter.end == old(input).len() - 1,
+            iter.end == input.len() - 1,
             input.len() == old(input).len(),
             is_permutation(old(input)@, input@),
             forall|k1: int, k2: int| 0 <= k1 < k2 < i ==> input[k1] <= input[k2],  // The sorted partition is indeed sorted
@@ -24,7 +24,7 @@ pub exec fn selection_sort(input: &mut Vec<i32>)
 
         for j in iter: (i + 1)..input.len()
             invariant
-                iter.end == old(input).len(),
+                iter.end == input.len(),
                 i <= min_index < input.len(),  // Bounds check for `min_index`
                 forall|k: int| i <= k < j ==> input[min_index as int] <= input[k],  // The item at `min_index` is the smallest out of all currently seen items in the unsorted partition
         {
