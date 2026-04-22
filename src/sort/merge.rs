@@ -2,7 +2,32 @@ use vstd::prelude::*;
 
 verus! {
 
-use super::{is_permutation, is_valid_sorting_algorithm, swap};
+use super::{is_sorted, is_valid_sorting_algorithm};
+
+broadcast use vstd::seq_lib::group_to_multiset_ensures;
+
+proof fn concat_multiset(a: Seq<i32>, b: Seq<i32>)
+    ensures
+        (a + b).to_multiset() =~= a.to_multiset().add(b.to_multiset()),
+    decreases b.len(),
+{
+    if b.len() != 0 {
+        assert(b =~= b.drop_last().push(b.last()) && a + b =~= (a + b.drop_last()).push(b.last()));
+        concat_multiset(a, b.drop_last());
+    }
+}
+
+proof fn subrange_multiset_split(s: Seq<i32>, lo: int, mid: int, hi: int)
+    requires
+        0 <= lo <= mid <= hi <= s.len(),
+    ensures
+        s.subrange(lo, hi).to_multiset() =~= s.subrange(lo, mid).to_multiset().add(
+            s.subrange(mid, hi).to_multiset(),
+        ),
+{
+    assert(s.subrange(lo, hi) =~= s.subrange(lo, mid) + s.subrange(mid, hi));
+    concat_multiset(s.subrange(lo, mid), s.subrange(mid, hi));
+}
 
 pub exec fn merge_sort(input: &mut Vec<i32>)
     ensures
@@ -13,9 +38,15 @@ pub exec fn merge_sort(input: &mut Vec<i32>)
     }
     let mut temp_merge_space = Vec::with_capacity(input.len());
     merge_sort_recursive(input, &mut temp_merge_space, 0, input.len() - 1);
+    proof {
+        assert(input@.subrange(0, input@.len() as int) =~= input@ && old(input)@.subrange(
+            0,
+            old(input)@.len() as int,
+        ) =~= old(input)@);
+    }
 }
 
-pub exec fn merge(
+exec fn merge(
     input: &mut Vec<i32>,
     temp_merge_space: &mut Vec<i32>,
     start: usize,
@@ -23,91 +54,146 @@ pub exec fn merge(
     end: usize,
 )
     requires
-        0 <= start <= middle < end < old(input).len(),
+        start <= middle < end < old(input).len(),
         old(temp_merge_space).len() == 0,
+        is_sorted(old(input)@.subrange(start as int, middle as int + 1)),
+        is_sorted(old(input)@.subrange(middle as int + 1, end as int + 1)),
     ensures
+        input.len() == old(input).len(),
         temp_merge_space.len() == 0,
+        is_sorted(input@.subrange(start as int, end as int + 1)),
+        input@.subrange(start as int, end as int + 1).to_multiset() =~= old(input)@.subrange(
+            start as int,
+            end as int + 1,
+        ).to_multiset(),
+        forall|k: int| 0 <= k < start ==> input[k] == old(input)[k],
+        forall|k: int| end < k < input.len() ==> input[k] == old(input)[k],
 {
-    let left_start = start;
-    let left_end = middle;
-    let ghost left_size = left_end - left_start + 1;
+    let mut left_pointer = start;
+    let mut right_pointer = middle + 1;
 
-    let right_start = middle + 1;
-    let right_end = end;
-    let ghost right_size = right_end - right_start + 1;
-
-    let mut left_pointer = left_start;
-    let mut right_pointer = right_start;
-
-    let ghost both_size = left_size + right_size;
-
-    while left_pointer <= left_end && right_pointer <= right_end
-        decreases both_size,
+    while left_pointer <= middle || right_pointer <= end
+        invariant
+            start <= left_pointer <= middle + 1,
+            middle + 1 <= right_pointer <= end + 1,
+            end < input.len(),
+            temp_merge_space.len() == (left_pointer - start) + (right_pointer - middle - 1),
+            is_sorted(temp_merge_space@),
+            temp_merge_space.len() > 0 && left_pointer <= middle ==> temp_merge_space@.last()
+                <= input[left_pointer as int],
+            temp_merge_space.len() > 0 && right_pointer <= end ==> temp_merge_space@.last()
+                <= input[right_pointer as int],
+            temp_merge_space@.to_multiset() =~= input@.subrange(
+                start as int,
+                left_pointer as int,
+            ).to_multiset().add(
+                input@.subrange(middle as int + 1, right_pointer as int).to_multiset(),
+            ),
+            is_sorted(input@.subrange(start as int, middle as int + 1)),
+            is_sorted(input@.subrange(middle as int + 1, end as int + 1)),
+        decreases end - start + 1 - temp_merge_space@.len(),
     {
-        if input[left_pointer] <= input[right_pointer] {
+        if right_pointer > end || (left_pointer <= middle && input[left_pointer]
+            <= input[right_pointer]) {
+            proof {
+                assert((left_pointer + 1 <= middle ==> input@.subrange(
+                    start as int,
+                    middle as int + 1,
+                )[(left_pointer - start) as int] <= input@.subrange(
+                    start as int,
+                    middle as int + 1,
+                )[(left_pointer - start) as int + 1]) && input@.subrange(
+                    start as int,
+                    left_pointer as int + 1,
+                ) =~= input@.subrange(start as int, left_pointer as int).push(
+                    input[left_pointer as int],
+                ));
+            }
             temp_merge_space.push(input[left_pointer]);
             left_pointer += 1;
         } else {
+            proof {
+                assert((right_pointer + 1 <= end ==> input@.subrange(
+                    middle as int + 1,
+                    end as int + 1,
+                )[(right_pointer - middle - 1) as int] <= input@.subrange(
+                    middle as int + 1,
+                    end as int + 1,
+                )[(right_pointer - middle - 1) as int + 1]) && input@.subrange(
+                    middle as int + 1,
+                    right_pointer as int + 1,
+                ) =~= input@.subrange(middle as int + 1, right_pointer as int).push(
+                    input[right_pointer as int],
+                ));
+            }
             temp_merge_space.push(input[right_pointer]);
             right_pointer += 1;
         }
-
-        proof {
-            both_size = both_size - 1;
-        }
     }
 
-    while left_pointer <= left_end
-        decreases both_size,
+    for i in 0..temp_merge_space.len()
+        invariant
+            temp_merge_space.len() == end - start + 1,
+            input.len() == old(input).len(),
+            end < input.len(),
+            forall|k: int| 0 <= k < start ==> input[k] == old(input)[k],
+            forall|k: int| end < k < input.len() ==> input[k] == old(input)[k],
+            forall|k: int| 0 <= k < i ==> input[start as int + k] == temp_merge_space[k],
     {
-        temp_merge_space.push(input[left_pointer]);
-        left_pointer += 1;
-
-        proof {
-            both_size = both_size - 1;
-        }
+        input[i + start] = temp_merge_space[i];
     }
 
-    while right_pointer <= right_end
-        decreases both_size,
-    {
-        temp_merge_space.push(input[right_pointer]);
-        right_pointer += 1;
-
-        proof {
-            both_size = both_size - 1;
-        }
-    }
-
-    assert(both_size == 0);
-
-    for i in 0..temp_merge_space.len() {
-        let input_i = i + left_start;
-        input[input_i] = temp_merge_space[i];
+    proof {
+        subrange_multiset_split(old(input)@, start as int, middle as int + 1, end as int + 1);
+        assert(input@.subrange(start as int, end as int + 1) =~= temp_merge_space@);
     }
 
     temp_merge_space.clear();
 }
 
-pub exec fn merge_sort_recursive(
+exec fn merge_sort_recursive(
     input: &mut Vec<i32>,
     temp_merge_space: &mut Vec<i32>,
     start: usize,
     end: usize,
 )
     requires
-        0 <= start <= end < old(input).len(),
+        start <= end < old(input).len(),
+        old(temp_merge_space).len() == 0,
     ensures
-        is_valid_sorting_algorithm(old(input)@, input@),
+        input.len() == old(input).len(),
+        temp_merge_space.len() == 0,
+        is_sorted(input@.subrange(start as int, end as int + 1)),
+        input@.subrange(start as int, end as int + 1).to_multiset() =~= old(input)@.subrange(
+            start as int,
+            end as int + 1,
+        ).to_multiset(),
+        forall|k: int| 0 <= k < start ==> input[k] == old(input)[k],
+        forall|k: int| end < k < input.len() ==> input[k] == old(input)[k],
     decreases end - start,
 {
-    let size = end - start + 1;
-    if size <= 1 {
+    if start == end {
         return ;
     }
     let middle = start + ((end - start) / 2);
+
     merge_sort_recursive(input, temp_merge_space, start, middle);
+
+    let ghost input_after_left = input@;
+
     merge_sort_recursive(input, temp_merge_space, middle + 1, end);
+
+    proof {
+        assert(input_after_left.subrange(middle as int + 1, end as int + 1) =~= old(
+            input,
+        )@.subrange(middle as int + 1, end as int + 1) && input@.subrange(
+            start as int,
+            middle as int + 1,
+        ) =~= input_after_left.subrange(start as int, middle as int + 1));
+        subrange_multiset_split(old(input)@, start as int, middle as int + 1, end as int + 1);
+        subrange_multiset_split(input@, start as int, middle as int + 1, end as int + 1);
+    }
+
     merge(input, temp_merge_space, start, middle, end);
 }
 
