@@ -9,7 +9,7 @@ ALL_SOURCE_FILES := $(shell find $(SOURCE_DIRECTORY) -name "*.rs")
 .PHONY: check format
 
 check:
-	$(VERUS) $(ROOT_SOURCE_FILE)
+	$(VERUS) $(ROOT_SOURCE_FILE) --no-cheating
 
 format:
 	$(VERUSFMT) $(ALL_SOURCE_FILES)
